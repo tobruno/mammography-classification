@@ -40,26 +40,32 @@ df = au.read_data(path)
 
 imagePaths = []
 
-for index, row in df.iterrows():
-	imagePath = row['path']
-	# derive the path to the input image, load the image (in
-	image = cv2.imread(imagePath)
-	#print(image.shape)
-	imagePaths.append(imagePath)
+# for index, row in df.iterrows():
+# 	imagePath = row['path']
+# 	# derive the path to the input image, load the image (in
+# 	image = cv2.imread(imagePath)
+# 	#print(image.shape)
+# 	imagePaths.append(imagePath)
 
-weights_array_isAbnormal = np.load('Data/weights_array_isAbnormal.npy')
+# Open the file and read the lines
+with open("Data/test_images_vgg16.txt", "r") as file:
+    for line in file:
+        # Strip whitespace/newline and add to the list
+        imagePaths.append(line.strip())
+
+#weights_array_isAbnormal = np.load('Data/weights_array_isAbnormal.npy')
 
 #print(weights_array_isAbnormal[1])
-weights_array = np.load('Data/weights_array.npy')
+weights_array = np.load('Data/weights_array_vgg16.npy')
 #print(weights_array)
 # load our object detector and label binarizer from disk
 
-# model = load_model("Data/model/detectorVgg16.h5", custom_objects={'loss': weighted_categorical_crossentropy(weights_array)})
-model = load_model("Data/model/detectorResNet50.h5", custom_objects={'loss': weighted_categorical_crossentropy(weights_array)})
-lb = pickle.loads(open('Data/labels/lb.pickle', "rb").read())
+model = load_model("Data/model/detectorVgg16.h5", custom_objects={'loss': weighted_categorical_crossentropy(weights_array)})
+#model = load_model("Data/model/detectorResNet50.h5", custom_objects={'loss': weighted_categorical_crossentropy(weights_array)})
+lb = pickle.loads(open('Data/labels/lb_vgg16.pickle', "rb").read())
 
-model_is_abnormal = load_model("Data/model/detector_is_abnormal.h5", custom_objects={'loss': weighted_categorical_crossentropy(weights_array_isAbnormal)})
-lb_is_abnormal = pickle.loads(open('Data/labels/lb_is_abnormal.pickle', "rb").read())
+#model_is_abnormal = load_model("Data/model/detector_is_abnormal.h5", custom_objects={'loss': weighted_categorical_crossentropy(weights_array_isAbnormal)})
+#lb_is_abnormal = pickle.loads(open('Data/labels/lb_is_abnormal.pickle', "rb").read())
 
 
 for imagePath in imagePaths:
@@ -69,11 +75,11 @@ for imagePath in imagePaths:
 	image = img_to_array(image) / 255.0
 	image = np.expand_dims(image, axis=0)
 
-	labelPred = model_is_abnormal.predict(image)
-	i = np.argmax(labelPred, axis=1)
-	label = lb_is_abnormal.classes_[i][0]
+	# labelPred = model_is_abnormal.predict(image)
+	# i = np.argmax(labelPred, axis=1)
+	# label = lb_is_abnormal.classes_[i][0]
 	label=1
-	print(label)
+	# print(label)
 
 	if label == 0:
 		image = cv2.imread(imagePath)

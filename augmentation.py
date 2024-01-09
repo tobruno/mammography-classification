@@ -275,7 +275,7 @@ def abnormality_masking(df):
 
 #show_image(img)
 
-#image = cv2.imread("Data/images/mdb002.pgm")
+
 def masking(image):
     if len(image.shape) == 2:
         # print("Image is already in grayscale format.")
@@ -307,8 +307,9 @@ def masking(image):
     return result
 
 def blacked_background(df):
-    image_paths = df['path'].tolist()
-    image_names = df['name'].tolist()
+    df1 = df.copy()
+    image_paths = df1['path'].tolist()
+    image_names = df1['name'].tolist()
     mask_name_list = []
     mask_path_list = []
 
@@ -329,31 +330,28 @@ def blacked_background(df):
             mask_name = image_names[i] + "_blacked2"
         else:
             mask_name = image_names[i] + "_blacked"
-        mask_path = "Data/no_background/" + mask_name + ".pgm"
+        mask_path = image_paths[i].rsplit('.', 1)[0] + mask_name + ".pgm"
         mask_name_list.append(mask_name)
         mask_path_list.append(mask_path)
         cv2.imwrite(mask_path, mask)
-    df['path'] = mask_path_list
+    df1['path'] = mask_path_list
 
-    return df
+    return df1
 
 
 def get_all_augmentation(df):
+    rotated = rotate_image(df, path="Data/rotated_enhanced/", case=3)
+    df_blacked = blacked_background(rotated)
     df_mirrored = mirror_image(df, path="Data/mirrored/", case=0)
-    print(df_mirrored.head(10))
     df_rotated = rotate_image(df, path="Data/rotated/", case=0)
-    print(df_rotated.head(10))
     df_mirrored_equalized = mirror_image(df, path="Data/mirrored_equalized/", case=4)
-    df_rotated_blurred= rotate_image(df, path="Data/rotated_blurred/", case=1)
+    df_rotated_blurred = rotate_image(df, path="Data/rotated_blurred/", case=1)
     df_mirrored_rotated_sharpened = rotate_image(df_mirrored, path="Data/mirrored_rotated_sharpened/", case=2)
+    df_mirrored_rotated_enhanced = rotate_image(df_mirrored, path="Data/mirrored_rotated_enhanced/", case=3)
+    df_rotated_sharpened = rotate_image(df, path="Data/rotated_sharpened/", case=2)
 
-    df_rotated1 = df_rotated.copy()
-    df_rotated1 = blacked_background(df_rotated1)
-
-    df_mirrored1 = df_mirrored.copy()
-    df_mirrored1 = blacked_background(df_mirrored1)
     #df_blurred_enhanced = mirror_image(mirror_image(df, path="Data/enhanced_blurred/", case=3), path="Data/enhanced_blurred/", case=1)
-    df1 = pd.concat([df, df_mirrored, df_rotated, df_mirrored_equalized, df_rotated_blurred, df_mirrored_rotated_sharpened, df_mirrored1, df_rotated1])
+    df1 = pd.concat([df_blacked, df_mirrored, df_rotated, df_mirrored_equalized, df_rotated_blurred, df_mirrored_rotated_sharpened, df_mirrored_rotated_enhanced, df_rotated_sharpened])
     return df1
 
 

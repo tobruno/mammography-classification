@@ -42,16 +42,20 @@ def weighted_categorical_crossentropy(weights):
 
 
 
-path = "Data/data.csv"
-df = au.read_data(path)
-df = au.get_all_augmentation(df)
-#df = au.blacked_background(df)
-#df = au.abnormality_masking(df)
-df = df.dropna(subset=['x'])
-df.to_csv("dataframe_vgg16.csv")
 
-# path = "dataframe_vgg16.csv.csv"
+# path = "Data/data.csv"
+# df = au.read_data(path)
+# df = au.get_all_augmentation(df)
+# #df = au.blacked_background(df)
+# #df = au.abnormality_masking(df)
+# df = df.dropna(subset=['x'])
+# df.to_csv("dataframe_vgg16.csv")
+
+# path = "dataframe_vgg16.csv"
 # df = pd.read_csv(path, sep=",")
+# df = au.blacked_background(df)
+# df.to_csv("dataframe_vgg16_blacked.csv")
+df = pd.read_csv("dataframe_vgg16_blacked.csv", sep=",")
 
 #df = au.abnormality_masking(df)
 #print(df.head(10))
@@ -106,7 +110,7 @@ for index, row in df.iterrows():
     (h, w) = image.shape[:2]
     x = float(x) / w
     y = float(y) / h
-    radius = float(radius) / w
+    radius = float(radius*2) / w
 
     image = load_img(imagePath, target_size=(224, 224))
     image = img_to_array(image)
@@ -148,47 +152,37 @@ class_weights = {i: total_samples / class_totals[i] for i in range(len(class_tot
 
 
 # Build the model
-vgg = VGG16(weights="imagenet", include_top=False,
+vgg16 = VGG16(weights="imagenet", include_top=False,
 	input_tensor=Input(shape=(224, 224, 3)))
 
-vgg.trainable = False
-# flatten the max-pooling output of VGG
-flatten = vgg.output
-flatten = Flatten()(flatten)
-softmaxHead = Dense(512, activation="relu")(flatten)
-softmaxHead = Dropout(0.5)(softmaxHead)
-softmaxHead = Dense(512, activation="relu")(softmaxHead)
-softmaxHead = Dropout(0.5)(softmaxHead)
-softmaxHead = Dense(256, activation="relu")(softmaxHead)
-softmaxHead = Dense(len(lb.classes_), activation="softmax", name="class_label")(softmaxHead)
+input = vgg16.input
+vgg16.trainable = False
 
-concat = Concatenate()([flatten, softmaxHead])
+flatten = vgg16.output
+flatten = Flatten()(flatten)
+classHead = Dense(1024, activation="relu")(flatten)
+classHead = Dropout(0.5)(classHead)
+classHead = Dense(512, activation="relu")(classHead)
+classHead = Dropout(0.5)(classHead)
+classHead = Dense(256, activation="relu")(classHead)
+classHead = Dense(len(lb.classes_), activation="softmax", name="class_label")(classHead)
+
+concat = Concatenate()([flatten, classHead])
 
 circleHead = Dense(128, activation="relu")(concat)
+circleHead = Dropout(0.3)(circleHead)
 circleHead = Dense(64, activation="relu")(circleHead)
 circleHead = Dense(32, activation="relu")(circleHead)
 circleHead = Dense(3, activation="sigmoid", name="bounding_circle")(circleHead)
 
-# Circle head
-# circleHead = Dense(128, activation="relu")(flatten)
-# circleHead = Dense(64, activation="relu")(circleHead)
-# circleHead = Dense(32, activation="relu")(circleHead)
-# circleHead = Dense(3, activation="sigmoid",
-#                    name="bounding_circle")(circleHead)
-# fully-connected layer head for class
-# softmaxHead = Dense(512, activation="relu")(flatten)
-# softmaxHead = Dropout(0.5)(softmaxHead)
-# softmaxHead = Dense(512, activation="relu")(softmaxHead)
-# softmaxHead = Dropout(0.5)(softmaxHead)
-# softmaxHead = Dense(len(lb.classes_), activation="softmax",
-# 	name="class_label")(softmaxHead)
+
 
 model = Model(
-	inputs=vgg.input,
-	outputs=(circleHead, softmaxHead))
+	inputs=input,
+	outputs=(circleHead, classHead))
 
 weights_array = np.array([class_weights[i] for i in range(len(class_weights))], dtype='float32')
-np.save('Data/weights_array.npy', weights_array)
+np.save('Data/weights_array_vgg16.npy', weights_array)
 
 losses = {
     "class_label": weighted_categorical_crossentropy(weights_array),
@@ -221,19 +215,19 @@ H = model.fit(
 	trainImages, trainTargets,
 	validation_data=(testImages, testTargets),
     batch_size=32,
-    epochs=30,
+    epochs=40,
     verbose=1)
 
 
 model.save("Data/model/detectorVgg16.h5", save_format="h5")
 
-f = open('Data/labels/lb.pickle', "wb")
+f = open('Data/labels/lb_vgg16.pickle', "wb")
 f.write(pickle.dumps(lb))
 f.close()
 
 
 lossNames = ["loss", "class_label_loss", "bounding_circle_loss"]
-N = np.arange(0, 30)
+N = np.arange(0, 40)
 plt.style.use("ggplot")
 (fig, ax) = plt.subplots(3, 1, figsize=(13, 13))
 # loop over the loss names
@@ -261,7 +255,20 @@ plt.title("Class Label Accuracy")
 plt.xlabel("Epoch #")
 plt.ylabel("Accuracy")
 plt.legend(loc="lower left")
-plotPath = os.path.sep.join(['Data/plots', "accs.png"])
+plotPath = os.path.sep.join(['Data/plots', "accs_label.png"])
+plt.savefig(plotPath)
+
+plt.style.use("ggplot")
+plt.figure()
+plt.plot(N, H.history["bounding_circle_accuracy"],
+    label="bounding_circle_train_acc")
+plt.plot(N, H.history["val_bounding_circle_accuracy"],
+    label="val_bounding_circle_acc")
+plt.title("Bounding Circle Accuracy")
+plt.xlabel("Epoch #")
+plt.ylabel("Accuracy")
+plt.legend(loc="lower left")
+plotPath = os.path.sep.join(['Data/plots', "accs_circle.png"])
 plt.savefig(plotPath)
 
 
