@@ -140,11 +140,11 @@ class_weights = {i: total_samples / class_totals[i] for i in range(len(class_tot
 # combined_output = GlobalAveragePooling2D()(combined_layer)
 #
 # flatten = Flatten()(combined_output)
-# softmaxHead = Dense(512, activation="relu")(flatten)
-# softmaxHead = Dropout(0.5)(softmaxHead)
-# softmaxHead = Dense(512, activation="relu")(softmaxHead)
-# softmaxHead = Dropout(0.5)(softmaxHead)
-# class_output = Dense(len(lb.classes_), activation="softmax", name="class_label")(softmaxHead)
+# classHead = Dense(512, activation="relu")(flatten)
+# classHead = Dropout(0.5)(classHead)
+# classHead = Dense(512, activation="relu")(classHead)
+# classHead = Dropout(0.5)(classHead)
+# class_output = Dense(len(lb.classes_), activation="softmax", name="class_label")(classHead)
 #
 # concat = Concatenate()([flatten, class_output])
 #
@@ -173,12 +173,12 @@ base_model.trainable = False
 flatten = base_model.output
 flatten = Flatten()(flatten)
 
-softmaxHead = Dense(1024, activation="relu")(flatten)
-softmaxHead = Dropout(0.5)(softmaxHead)
-softmaxHead = Dense(512, activation="relu")(softmaxHead)
-softmaxHead = Dropout(0.5)(softmaxHead)
-softmaxHead = Dense(256, activation="relu")(softmaxHead)
-class_output = Dense(len(lb.classes_), activation="softmax", name="class_label")(softmaxHead)
+classHead = Dense(1024, activation="relu")(flatten)
+classHead = Dropout(0.5)(classHead)
+classHead = Dense(512, activation="relu")(classHead)
+classHead = Dropout(0.5)(classHead)
+classHead = Dense(256, activation="relu")(classHead)
+class_output = Dense(len(lb.classes_), activation="softmax", name="class_label")(classHead)
 
 #concat = Concatenate()([flatten, class_output])
 
