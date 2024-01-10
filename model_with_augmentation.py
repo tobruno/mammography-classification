@@ -22,24 +22,18 @@ from keras.initializers import Zeros
 import keras.backend as K
 
 def weighted_categorical_crossentropy(weights):
-    # Convert weights to a Keras/TensorFlow constant of type float32
+    #weights to a keras constant of float32
     weights = K.constant(weights, dtype='float32')
     def loss(y_true, y_pred):
-        # Convert y_true to the same type as weights
         y_true = K.cast(y_true, 'float32')
-
-        # scale predictions so that the class probabilities of each sample sum to 1
+        #scale preds so that the class probabilities sum to 1
         y_pred /= K.sum(y_pred, axis=-1, keepdims=True)
-        # clip to prevent NaN's and Inf's
         y_pred = K.clip(y_pred, K.epsilon(), 1 - K.epsilon())
-        # calculate loss and weight it
         loss = y_true * K.log(y_pred) * weights
         loss = -K.sum(loss, -1)
         return loss
 
     return loss
-
-
 
 
 # path = "Data/data.csv"
@@ -55,9 +49,6 @@ df = pd.read_csv(path, sep=",")
 print(df.head(10))
 
 
-
-
-print("[INFO] loading dataset...")
 masks = []
 imagePaths = []
 maskPaths = []
@@ -108,7 +99,6 @@ print(len(lb.classes_))
 if len(lb.classes_) == 2:
     labels = to_categorical(labels)
 
-# Split the data
 split = train_test_split(data, labels, circles, imagePaths, masks, maskPaths, test_size=0.2, random_state=42)
 
 (trainImages, testImages) = split[:2]
@@ -140,11 +130,11 @@ class_weights = {i: total_samples / class_totals[i] for i in range(len(class_tot
 # combined_output = GlobalAveragePooling2D()(combined_layer)
 #
 # flatten = Flatten()(combined_output)
-# softmaxHead = Dense(512, activation="relu")(flatten)
-# softmaxHead = Dropout(0.5)(softmaxHead)
-# softmaxHead = Dense(512, activation="relu")(softmaxHead)
-# softmaxHead = Dropout(0.5)(softmaxHead)
-# class_output = Dense(len(lb.classes_), activation="softmax", name="class_label")(softmaxHead)
+# classHead = Dense(512, activation="relu")(flatten)
+# classHead = Dropout(0.5)(classHead)
+# classHead = Dense(512, activation="relu")(classHead)
+# classHead = Dropout(0.5)(classHead)
+# class_output = Dense(len(lb.classes_), activation="softmax", name="class_label")(classHead)
 #
 # concat = Concatenate()([flatten, class_output])
 #
@@ -173,12 +163,12 @@ base_model.trainable = False
 flatten = base_model.output
 flatten = Flatten()(flatten)
 
-softmaxHead = Dense(1024, activation="relu")(flatten)
-softmaxHead = Dropout(0.5)(softmaxHead)
-softmaxHead = Dense(512, activation="relu")(softmaxHead)
-softmaxHead = Dropout(0.5)(softmaxHead)
-softmaxHead = Dense(256, activation="relu")(softmaxHead)
-class_output = Dense(len(lb.classes_), activation="softmax", name="class_label")(softmaxHead)
+classHead = Dense(1024, activation="relu")(flatten)
+classHead = Dropout(0.5)(classHead)
+classHead = Dense(512, activation="relu")(classHead)
+classHead = Dropout(0.5)(classHead)
+classHead = Dense(256, activation="relu")(classHead)
+class_output = Dense(len(lb.classes_), activation="softmax", name="class_label")(classHead)
 
 #concat = Concatenate()([flatten, class_output])
 
