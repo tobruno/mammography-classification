@@ -22,24 +22,18 @@ from keras.initializers import Zeros
 import keras.backend as K
 
 def weighted_categorical_crossentropy(weights):
-    # Convert weights to a Keras/TensorFlow constant of type float32
+    #weights to a keras constant of float32
     weights = K.constant(weights, dtype='float32')
     def loss(y_true, y_pred):
-        # Convert y_true to the same type as weights
         y_true = K.cast(y_true, 'float32')
-
-        # scale predictions so that the class probabilities of each sample sum to 1
+        #scale preds so that the class probabilities sum to 1
         y_pred /= K.sum(y_pred, axis=-1, keepdims=True)
-        # clip to prevent NaN's and Inf's
         y_pred = K.clip(y_pred, K.epsilon(), 1 - K.epsilon())
-        # calculate loss and weight it
         loss = y_true * K.log(y_pred) * weights
         loss = -K.sum(loss, -1)
         return loss
 
     return loss
-
-
 
 
 # path = "Data/data.csv"
@@ -143,11 +137,11 @@ class_weights = {i: total_samples / class_totals[i] for i in range(len(class_tot
 # combined_output = GlobalAveragePooling2D()(combined_layer)
 #
 # flatten = Flatten()(combined_output)
-# softmaxHead = Dense(512, activation="relu")(flatten)
-# softmaxHead = Dropout(0.5)(softmaxHead)
-# softmaxHead = Dense(512, activation="relu")(softmaxHead)
-# softmaxHead = Dropout(0.5)(softmaxHead)
-# class_output = Dense(len(lb.classes_), activation="softmax", name="class_label")(softmaxHead)
+# classHead = Dense(512, activation="relu")(flatten)
+# classHead = Dropout(0.5)(classHead)
+# classHead = Dense(512, activation="relu")(classHead)
+# classHead = Dropout(0.5)(classHead)
+# class_output = Dense(len(lb.classes_), activation="softmax", name="class_label")(classHead)
 #
 # concat = Concatenate()([flatten, class_output])
 #
@@ -175,12 +169,12 @@ combined_output = GlobalAveragePooling2D()(combined_layer)
 flatten = Flatten()(combined_output)
 
 
-softmaxHead = Dense(1024, activation="relu")(flatten)
-softmaxHead = Dropout(0.5)(softmaxHead)
-softmaxHead = Dense(512, activation="relu")(softmaxHead)
-softmaxHead = Dropout(0.5)(softmaxHead)
-softmaxHead = Dense(256, activation="relu")(softmaxHead)
-class_output = Dense(len(lb.classes_), activation="softmax", name="class_label")(softmaxHead)
+classHead = Dense(1024, activation="relu")(flatten)
+classHead = Dropout(0.5)(classHead)
+classHead = Dense(512, activation="relu")(classHead)
+classHead = Dropout(0.5)(classHead)
+classHead = Dense(256, activation="relu")(classHead)
+class_output = Dense(len(lb.classes_), activation="softmax", name="class_label")(classHead)
 
 #concat = Concatenate()([flatten, class_output])
 
@@ -274,5 +268,18 @@ plt.title("Class Label Accuracy")
 plt.xlabel("Epoch #")
 plt.ylabel("Accuracy")
 plt.legend(loc="lower left")
-plotPath = os.path.sep.join(['Data/plots', "accsResNet.png"])
+plotPath = os.path.sep.join(['Data/plots', "accs_class_ResNet.png"])
+plt.savefig(plotPath)
+
+plt.style.use("ggplot")
+plt.figure()
+plt.plot(N, H.history["bounding_circle_accuracy"],
+    label="bounding_circle_train_acc")
+plt.plot(N, H.history["val_bounding_circle_accuracy"],
+    label="val_bounding_circle_acc")
+plt.title("Bounding Circle Accuracy")
+plt.xlabel("Epoch #")
+plt.ylabel("Accuracy")
+plt.legend(loc="lower left")
+plotPath = os.path.sep.join(['Data/plots', "accs_circle_ResNet.png"])
 plt.savefig(plotPath)
