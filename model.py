@@ -23,17 +23,13 @@ from imutils import paths
 import keras.backend as K
 
 def weighted_categorical_crossentropy(weights):
-    # Convert weights to a Keras/TensorFlow constant of type float32
+    #weights to a keras constant of float32
     weights = K.constant(weights, dtype='float32')
     def loss(y_true, y_pred):
-        # Convert y_true to the same type as weights
         y_true = K.cast(y_true, 'float32')
-
-        # scale predictions so that the class probabilities of each sample sum to 1
+        #scale preds so that the class probabilities sum to 1
         y_pred /= K.sum(y_pred, axis=-1, keepdims=True)
-        # clip to prevent NaN's and Inf's
         y_pred = K.clip(y_pred, K.epsilon(), 1 - K.epsilon())
-        # calculate loss and weight it
         loss = y_true * K.log(y_pred) * weights
         loss = -K.sum(loss, -1)
         return loss
@@ -155,37 +151,23 @@ vgg.trainable = False
 # flatten the max-pooling output of VGG
 flatten = vgg.output
 flatten = Flatten()(flatten)
-softmaxHead = Dense(512, activation="relu")(flatten)
-softmaxHead = Dropout(0.5)(softmaxHead)
-softmaxHead = Dense(512, activation="relu")(softmaxHead)
-softmaxHead = Dropout(0.5)(softmaxHead)
-softmaxHead = Dense(256, activation="relu")(softmaxHead)
-softmaxHead = Dense(len(lb.classes_), activation="softmax", name="class_label")(softmaxHead)
+classHead = Dense(512, activation="relu")(flatten)
+classHead = Dropout(0.5)(classHead)
+classHead = Dense(512, activation="relu")(classHead)
+classHead = Dropout(0.5)(classHead)
+classHead = Dense(256, activation="relu")(classHead)
+classHead = Dense(len(lb.classes_), activation="softmax", name="class_label")(classHead)
 
-concat = Concatenate()([flatten, softmaxHead])
+concat = Concatenate()([flatten, classHead])
 
 circleHead = Dense(128, activation="relu")(concat)
 circleHead = Dense(64, activation="relu")(circleHead)
 circleHead = Dense(32, activation="relu")(circleHead)
 circleHead = Dense(3, activation="sigmoid", name="bounding_circle")(circleHead)
 
-# Circle head
-# circleHead = Dense(128, activation="relu")(flatten)
-# circleHead = Dense(64, activation="relu")(circleHead)
-# circleHead = Dense(32, activation="relu")(circleHead)
-# circleHead = Dense(3, activation="sigmoid",
-#                    name="bounding_circle")(circleHead)
-# fully-connected layer head for class
-# softmaxHead = Dense(512, activation="relu")(flatten)
-# softmaxHead = Dropout(0.5)(softmaxHead)
-# softmaxHead = Dense(512, activation="relu")(softmaxHead)
-# softmaxHead = Dropout(0.5)(softmaxHead)
-# softmaxHead = Dense(len(lb.classes_), activation="softmax",
-# 	name="class_label")(softmaxHead)
-
 model = Model(
 	inputs=vgg.input,
-	outputs=(circleHead, softmaxHead))
+	outputs=(circleHead, classHead))
 
 weights_array = np.array([class_weights[i] for i in range(len(class_weights))], dtype='float32')
 np.save('Data/weights_array.npy', weights_array)
