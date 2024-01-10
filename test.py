@@ -24,10 +24,8 @@ def weighted_categorical_crossentropy(weights):
 
 def predict_with_single_input(model, image):
     if len(image.shape) == 3:
-        image = np.expand_dims(image, axis=0)  # Add the batch dimension
-    # Create a dummy ROI map with the same spatial dimensions as the image and 1 channel
-    dummy_roi = np.zeros((1, 224, 224, 1))  # Note the batch dimension is added here too
-    # Use both the image and the dummy ROI map for prediction
+        image = np.expand_dims(image, axis=0)
+    dummy_roi = np.zeros((1, 224, 224, 1)) 
     circlePreds, labelPreds = model.predict([image, dummy_roi])
     return circlePreds, labelPreds
 
@@ -42,7 +40,6 @@ imagePaths = []
 
 for index, row in df.iterrows():
 	imagePath = row['path']
-	# derive the path to the input image, load the image (in
 	image = cv2.imread(imagePath)
 	#print(image.shape)
 	imagePaths.append(imagePath)
@@ -52,7 +49,6 @@ weights_array_isAbnormal = np.load('Data/weights_array_isAbnormal.npy')
 #print(weights_array_isAbnormal[1])
 weights_array = np.load('Data/weights_array.npy')
 #print(weights_array)
-# load our object detector and label binarizer from disk
 
 # model = load_model("Data/model/detectorVgg16.h5", custom_objects={'loss': weighted_categorical_crossentropy(weights_array)})
 model = load_model("Data/model/detectorResNet50.h5", custom_objects={'loss': weighted_categorical_crossentropy(weights_array)})
@@ -95,8 +91,6 @@ for imagePath in imagePaths:
 		print(h, w)
 		print(startX, startY, radius)
 		print(label)
-		# load the input image (in OpenCV format), resize it such that it
-		# fits on our screen, and grab its dimensions
 
 		cv2.putText(image, label, (int(h * 0.1), int(w * 0.5)), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 4)
 		x = int(startX * w)
